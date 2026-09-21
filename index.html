@@ -3,134 +3,165 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TryHackMe Journey Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>TryHackMe Leaderboards & Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Source+Sans+Pro:wght@400;600;700&family=Fira+Code:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            thmGreen: '#10b981',
-            thmDark: '#0b0f19',
-            thmCard: '#111827',
-            thmBorder: '#1f2937'
+            thmBg: '#151c2b',
+            thmCard: '#1c2538',
+            thmCardLight: '#212c42',
+            thmBorder: '#2c323e',
+            thmGreen: '#a3ea2a',
+            thmGreenDark: '#26890c',
+            thmTextMuted: '#878fa2'
+          },
+          fontFamily: {
+            ubuntu: ['Ubuntu', 'sans-serif'],
+            sans: ['Source Sans Pro', 'sans-serif'],
+            mono: ['Fira Code', 'monospace']
           }
         }
       }
     }
   </script>
 </head>
-<body class="bg-thmDark text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+<body class="bg-thmBg text-slate-100 min-h-screen font-sans flex flex-col justify-between">
 
+  <!-- Main App Shell -->
   <div>
-    <!-- Header -->
-    <header class="border-b border-slate-800 bg-slate-900/90 sticky top-0 backdrop-blur z-20 px-6 py-4">
-      <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
+    <!-- Top Nav Header -->
+    <header class="bg-[#1c2538] border-b border-thmBorder sticky top-0 z-30 px-4 py-3 shadow-md">
+      <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+        
+        <!-- Logo & Title -->
         <div class="flex items-center gap-3">
-          <span class="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xl font-mono">
-            <i class="fa-solid fa-terminal"></i>
+          <a href="https://tryhackme.com" target="_blank" rel="noopener noreferrer">
+            <img src="https://assets.tryhackme.com/img/logo/tryhackme_logo_full.svg" alt="THM Logo" class="h-8" />
+          </a>
+          <span class="text-xs bg-thmCardLight border border-thmBorder px-2.5 py-1 rounded text-thmGreen font-mono font-bold">
+            TRACKER
           </span>
-          <div>
-            <h1 class="text-lg sm:text-xl font-bold tracking-wide">TryHackMe Dynamic Tracker</h1>
-            <p class="text-xs text-slate-400">Unique user upsert & benchmark directory</p>
-          </div>
         </div>
 
+        <!-- Action Controls -->
         <div class="flex items-center gap-2">
-          <!-- Quick Update Modal Button -->
           <button 
-            onclick="openUpdateModal()" 
-            class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 transition"
+            onclick="openModal()" 
+            class="bg-thmGreen hover:bg-[#b5f247] text-slate-950 font-ubuntu font-bold text-xs px-3 py-1.5 rounded transition flex items-center gap-1.5"
           >
-            <i class="fa-solid fa-plus"></i>
-            <span>Update / Paste Data</span>
+            <i class="fa-solid fa-user-plus text-[11px]"></i>
+            <span>Update / Add Users</span>
           </button>
-
-          <!-- Export JSON Button -->
+          
           <button 
-            onclick="exportJsonFile()" 
-            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition"
-            title="Export updated users.json for GitHub"
+            onclick="exportJson()" 
+            class="bg-thmCardLight hover:bg-slate-700 text-slate-200 border border-thmBorder text-xs font-ubuntu font-semibold px-3 py-1.5 rounded transition flex items-center gap-1.5"
+            title="Download users.json to commit to GitHub"
           >
-            <i class="fa-solid fa-download"></i>
+            <i class="fa-solid fa-download text-[11px] text-thmGreen"></i>
             <span class="hidden sm:inline">Export users.json</span>
           </button>
         </div>
       </div>
 
-      <!-- Controls & Search -->
-      <div class="max-w-6xl mx-auto mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+      <!-- Filters & Category Selector -->
+      <div class="max-w-6xl mx-auto mt-3 pt-3 border-t border-thmBorder flex flex-wrap items-center justify-between gap-3">
         <!-- Tabs -->
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 text-xs font-ubuntu font-medium">
           <button 
             id="tab-bronze_league"
             onclick="switchCategory('bronze_league')" 
-            class="cat-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-emerald-500 bg-emerald-500/10 text-emerald-400 transition"
+            class="cat-tab px-3 py-1.5 rounded bg-thmGreen/10 border border-thmGreen text-thmGreen transition"
           >
-            <i class="fa-solid fa-shield-halved mr-1.5 text-amber-500"></i>Bronze League
+            <i class="fa-solid fa-shield-halved text-amber-500 mr-1.5"></i>Bronze League
           </button>
           <button 
             id="tab-india_monthly"
             onclick="switchCategory('india_monthly')" 
-            class="cat-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition"
+            class="cat-tab px-3 py-1.5 rounded bg-thmCardLight border border-thmBorder text-slate-300 hover:text-white transition"
           >
-            <i class="fa-solid fa-calendar-days mr-1.5 text-blue-400"></i>India Monthly
+            <i class="fa-solid fa-calendar-days text-blue-400 mr-1.5"></i>India Monthly
           </button>
           <button 
             id="tab-india_all_time"
             onclick="switchCategory('india_all_time')" 
-            class="cat-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition"
+            class="cat-tab px-3 py-1.5 rounded bg-thmCardLight border border-thmBorder text-slate-300 hover:text-white transition"
           >
-            <i class="fa-solid fa-trophy mr-1.5 text-yellow-400"></i>India All-Time
+            <i class="fa-solid fa-trophy text-yellow-400 mr-1.5"></i>India All-Time
           </button>
         </div>
 
-        <div class="flex items-center gap-3 w-full sm:w-auto">
+        <!-- Live Search -->
+        <div class="flex items-center gap-2 w-full sm:w-auto">
           <div class="relative flex-1 sm:w-64">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-thmTextMuted text-xs"></i>
             <input 
               type="text" 
               id="searchInput" 
-              placeholder="Search user, badge..." 
-              class="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs focus:outline-none focus:border-emerald-500 text-white"
+              placeholder="Search user, badge, rank..." 
+              class="w-full bg-thmBg border border-thmBorder rounded px-8 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-thmGreen"
             />
           </div>
-          <div class="bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-mono">
-            Count: <span id="userCount" class="text-emerald-400 font-bold">0</span>
-          </div>
+          <span class="bg-thmCardLight border border-thmBorder px-2.5 py-1.5 rounded text-xs font-mono text-thmTextMuted">
+            <span id="userCount" class="text-thmGreen font-bold">0</span> users
+          </span>
         </div>
       </div>
     </header>
 
-    <!-- Main Grid -->
-    <main class="max-w-6xl mx-auto px-6 py-6">
-      <div id="loading" class="text-center py-20 text-slate-400">
-        <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-400 mb-3"></i>
-        <p>Loading database...</p>
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 py-6">
+      <!-- Loading State -->
+      <div id="loading" class="text-center py-20 text-thmTextMuted">
+        <i class="fa-solid fa-circle-notch fa-spin text-3xl text-thmGreen mb-3"></i>
+        <p class="font-ubuntu text-sm">Loading users from users.json...</p>
       </div>
 
-      <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 hidden"></div>
+      <!-- Leaderboard Table -->
+      <div id="tableWrapper" class="hidden bg-thmCard border border-thmBorder rounded-lg overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-thmBorder bg-thmCardLight/60 text-[11px] font-ubuntu font-bold uppercase tracking-wider text-thmTextMuted">
+                <th class="py-3 px-4 w-16 text-center">Rank</th>
+                <th class="py-3 px-4">User</th>
+                <th class="py-3 px-4">Badge</th>
+                <th class="py-3 px-4 text-right">Points</th>
+                <th id="thRooms" class="py-3 px-4 text-right">Rooms</th>
+                <th class="py-3 px-4 text-center w-28">Profile</th>
+              </tr>
+            </thead>
+            <tbody id="userRows" class="divide-y divide-thmBorder text-sm"></tbody>
+          </table>
+        </div>
+      </div>
     </main>
   </div>
 
-  <!-- Update / Raw Paste Modal -->
-  <div id="updateModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-xl p-6 shadow-2xl">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-sync text-emerald-400"></i>
-          Update or Upsert Users
+  <!-- Upsert / Update Modal -->
+  <div id="updateModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#1c2538] border border-thmBorder w-full max-w-lg rounded-xl p-5 shadow-2xl">
+      <div class="flex items-center justify-between mb-4 border-b border-thmBorder pb-3">
+        <h3 class="text-sm font-ubuntu font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-arrows-rotate text-thmGreen"></i>
+          Update or Add Users (Deduplicating)
         </h3>
-        <button onclick="closeUpdateModal()" class="text-slate-400 hover:text-white text-lg">
+        <button onclick="closeModal()" class="text-thmTextMuted hover:text-white text-base">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block text-slate-400 mb-1">Target Category:</label>
-          <select id="modalCategory" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+          <label class="block text-thmTextMuted mb-1">Target Category:</label>
+          <select id="modalCategory" class="w-full bg-thmBg border border-thmBorder rounded p-2 text-white font-ubuntu">
             <option value="bronze_league">Bronze League</option>
             <option value="india_monthly">India Monthly</option>
             <option value="india_all_time">India All-Time</option>
@@ -138,22 +169,22 @@
         </div>
 
         <div>
-          <label class="block text-slate-400 mb-1">Single Quick User Upsert:</label>
+          <label class="block text-thmTextMuted mb-1">Quick Single User Upsert:</label>
           <div class="grid grid-cols-2 gap-2">
-            <input type="text" id="singleUser" placeholder="Username (Unique ID)" class="bg-slate-800 border border-slate-700 p-2 rounded text-white" />
-            <input type="number" id="singleRank" placeholder="New Rank (e.g. 1)" class="bg-slate-800 border border-slate-700 p-2 rounded text-white" />
-            <input type="number" id="singlePoints" placeholder="New Points (e.g. 2400)" class="bg-slate-800 border border-slate-700 p-2 rounded text-white" />
-            <input type="text" id="singleBadge" placeholder="Badge (e.g. TITAN)" class="bg-slate-800 border border-slate-700 p-2 rounded text-white" />
+            <input type="text" id="singleUser" placeholder="Username (Unique ID)" class="bg-thmBg border border-thmBorder p-2 rounded text-white" />
+            <input type="number" id="singleRank" placeholder="Rank (e.g. 1)" class="bg-thmBg border border-thmBorder p-2 rounded text-white" />
+            <input type="number" id="singlePoints" placeholder="Points" class="bg-thmBg border border-thmBorder p-2 rounded text-white" />
+            <input type="text" id="singleBadge" placeholder="Badge (e.g. LEGEND)" class="bg-thmBg border border-thmBorder p-2 rounded text-white" />
           </div>
-          <button onclick="upsertSingleUser()" class="w-full mt-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-emerald-400 py-1.5 rounded font-semibold transition">
-            Save / Update User
+          <button onclick="upsertSingle()" class="w-full mt-2 bg-thmCardLight hover:bg-slate-700 text-thmGreen border border-thmBorder py-2 rounded font-ubuntu font-bold transition">
+            Save User
           </button>
         </div>
 
-        <div class="pt-2 border-t border-slate-800">
-          <label class="block text-slate-400 mb-1">Or Paste Raw Copied Text from THM:</label>
-          <textarea id="rawText" rows="4" placeholder="Paste leaderboards text here... Existing users will have their rank and points refreshed without duplicating!" class="w-full bg-slate-800 border border-slate-700 p-2 rounded font-mono text-slate-200 text-[11px]"></textarea>
-          <button onclick="parseAndUpsertRaw()" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 py-2 rounded font-bold transition">
+        <div class="pt-3 border-t border-thmBorder">
+          <label class="block text-thmTextMuted mb-1">Or Paste Copied Text From THM:</label>
+          <textarea id="rawInput" rows="4" placeholder="Paste leaderboard rows here... Existing users update automatically without duplicating!" class="w-full bg-thmBg border border-thmBorder p-2 rounded font-mono text-slate-300 text-[11px]"></textarea>
+          <button onclick="parseRawInput()" class="w-full mt-2 bg-thmGreen hover:bg-[#b5f247] text-slate-950 py-2 rounded font-ubuntu font-bold transition">
             Parse & Deduplicate
           </button>
         </div>
@@ -161,8 +192,9 @@
     </div>
   </div>
 
-  <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
-    TryHackMe Journey Tracker • Automatic deduplication by <code class="text-slate-400">username</code>
+  <!-- Minimal Footer -->
+  <footer class="border-t border-thmBorder py-4 text-center text-xs text-thmTextMuted font-mono">
+    TryHackMe Journey Tracker • Direct profile integration via <span class="text-thmGreen">tryhackme.com/p/{user}</span>
   </footer>
 
   <script>
@@ -170,8 +202,8 @@
     let dataset = { bronze_league: [], india_monthly: [], india_all_time: [] };
     let currentCategory = "bronze_league";
 
-    // Load initial data (LocalStorage overrides if you did local updates, else fetches users.json)
-    async function init() {
+    // Load Data
+    async function loadData() {
       const cached = localStorage.getItem("thm_tracker_data");
       if (cached) {
         try { dataset = JSON.parse(cached); } catch(e) {}
@@ -181,54 +213,42 @@
         try {
           const res = await fetch("./users.json");
           if (res.ok) dataset = await res.json();
-        } catch (err) {
-          console.warn("Could not load users.json directly:", err);
+        } catch(err) {
+          console.warn("Could not read users.json directly:", err);
         }
       }
 
       document.getElementById("loading").classList.add("hidden");
-      document.getElementById("cardsGrid").classList.remove("hidden");
+      document.getElementById("tableWrapper").classList.remove("hidden");
       render();
     }
 
-    // Core Upsert Logic: Check by unique username (Case Insensitive)
+    // Core Upsert Function: Prevents Duplicate Usernames
     function upsertUser(cat, newUser) {
       if (!dataset[cat]) dataset[cat] = [];
       const list = dataset[cat];
-      const targetName = newUser.username.trim().toLowerCase();
+      const target = newUser.username.trim().toLowerCase();
+      const idx = list.findIndex(u => u.username.trim().toLowerCase() === target);
 
-      const existingIndex = list.findIndex(u => u.username.trim().toLowerCase() === targetName);
-
-      if (existingIndex !== -1) {
-        // Update existing user without duplicating
-        list[existingIndex] = {
-          ...list[existingIndex],
-          ...newUser,
-          lastUpdated: new Date().toISOString().split('T')[0]
-        };
+      if (idx !== -1) {
+        // Overwrite existing user data
+        list[idx] = { ...list[idx], ...newUser };
       } else {
         // Insert new unique user
-        list.push({
-          ...newUser,
-          lastUpdated: new Date().toISOString().split('T')[0]
-        });
+        list.push(newUser);
       }
 
-      // Sort by rank ascending if rank exists
+      // Sort by rank
       list.sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
-      persistData();
-    }
-
-    function persistData() {
       localStorage.setItem("thm_tracker_data", JSON.stringify(dataset));
     }
 
     function switchCategory(cat) {
       currentCategory = cat;
-      document.querySelectorAll(".cat-tab").forEach(t => {
-        t.className = "cat-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition";
+      document.querySelectorAll(".cat-tab").forEach(tab => {
+        tab.className = "cat-tab px-3 py-1.5 rounded bg-thmCardLight border border-thmBorder text-slate-300 hover:text-white transition";
       });
-      document.getElementById("tab-" + cat).className = "cat-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-emerald-500 bg-emerald-500/10 text-emerald-400 transition";
+      document.getElementById("tab-" + cat).className = "cat-tab px-3 py-1.5 rounded bg-thmGreen/10 border border-thmGreen text-thmGreen transition";
       document.getElementById("searchInput").value = "";
       render();
     }
@@ -242,108 +262,107 @@
         (u.rank && u.rank.toString().includes(q))
       );
 
-      const grid = document.getElementById("cardsGrid");
       document.getElementById("userCount").textContent = filtered.length;
-      grid.innerHTML = "";
+      const tbody = document.getElementById("userRows");
+      tbody.innerHTML = "";
 
       if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-slate-500 py-16">No users found.</div>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-thmTextMuted">No users match your criteria.</td></tr>`;
         return;
       }
 
       filtered.forEach((u, i) => {
         const profileUrl = baseUrl + encodeURIComponent(u.username);
-        const card = document.createElement("div");
-        card.className = "bg-thmCard border border-thmBorder hover:border-emerald-500/40 rounded-xl p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between";
+        const rankNum = u.rank || (i + 1);
 
-        card.innerHTML = `
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">
-                #${u.rank || (i + 1)}
-              </span>
-              ${u.badge ? `
-                <span class="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono">
-                  [${u.badge}]
-                </span>
-              ` : ''}
-            </div>
+        // Podium colors for 1, 2, 3
+        let rankBadge = `<span class="font-mono text-slate-400">#${rankNum}</span>`;
+        if (rankNum === 1) rankBadge = `<span class="bg-amber-400/20 text-amber-400 px-2 py-0.5 rounded font-mono font-bold"><i class="fa-solid fa-crown text-[10px] mr-1"></i>1</span>`;
+        if (rankNum === 2) rankBadge = `<span class="bg-slate-300/20 text-slate-300 px-2 py-0.5 rounded font-mono font-bold">2</span>`;
+        if (rankNum === 3) rankBadge = `<span class="bg-amber-700/30 text-amber-500 px-2 py-0.5 rounded font-mono font-bold">3</span>`;
 
-            <h3 class="font-bold text-base text-white truncate" title="${u.username}">
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-thmCardLight/50 transition";
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-center font-mono">${rankBadge}</td>
+          <td class="py-3 px-4">
+            <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="font-ubuntu font-bold text-white hover:text-thmGreen transition">
               ${u.username}
-            </h3>
-
-            <div class="mt-2 space-y-1 text-xs text-slate-400">
-              <div class="flex items-center justify-between">
-                <span class="text-slate-500">Points:</span>
-                <span class="text-slate-200 font-mono font-semibold">${(u.points || 0).toLocaleString()}</span>
-              </div>
-              ${u.rooms ? `
-                <div class="flex items-center justify-between">
-                  <span class="text-slate-500">Rooms:</span>
-                  <span class="text-emerald-400 font-mono font-semibold">${u.rooms.toLocaleString()}</span>
-                </div>
-              ` : ''}
-              ${u.lastUpdated ? `
-                <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-                  <span>Updated:</span>
-                  <span>${u.lastUpdated}</span>
-                </div>
-              ` : ''}
-            </div>
-          </div>
-
-          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
-            <a 
-              href="${profileUrl}" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              class="flex-1 inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors"
-            >
-              <span>View Profile</span>
-              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
             </a>
-            <button 
-              onclick="copyLink('${profileUrl}', this)" 
-              class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition" 
-              title="Copy Profile URL"
-            >
-              <i class="fa-regular fa-copy"></i>
-            </button>
-          </div>
+          </td>
+          <td class="py-3 px-4">
+            ${u.badge ? `<span class="text-[11px] font-mono px-2 py-0.5 rounded bg-thmBorder text-slate-300">[${u.badge}]</span>` : '-'}
+          </td>
+          <td class="py-3 px-4 text-right font-mono text-slate-200 font-semibold">
+            ${(u.points || 0).toLocaleString()}
+          </td>
+          <td class="py-3 px-4 text-right font-mono text-thmGreen">
+            ${u.rooms ? u.rooms.toLocaleString() : '-'}
+          </td>
+          <td class="py-3 px-4 text-center">
+            <div class="inline-flex items-center gap-1.5">
+              <a 
+                href="${profileUrl}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="p-1.5 rounded bg-thmCardLight hover:bg-thmGreen hover:text-slate-950 text-thmGreen border border-thmBorder text-xs transition"
+                title="Go to THM Profile"
+              >
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </a>
+              <button 
+                onclick="copyUrl('${profileUrl}', this)" 
+                class="p-1.5 rounded bg-thmCardLight hover:bg-slate-700 text-slate-400 hover:text-white border border-thmBorder text-xs transition"
+                title="Copy Profile URL"
+              >
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+          </td>
         `;
-        grid.appendChild(card);
+        tbody.appendChild(tr);
       });
     }
 
-    // Modal Operations
-    function openUpdateModal() {
+    function copyUrl(url, btn) {
+      navigator.clipboard.writeText(url).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-check text-thmGreen"></i>`;
+        setTimeout(() => btn.innerHTML = orig, 1200);
+      });
+    }
+
+    function openModal() {
       document.getElementById("modalCategory").value = currentCategory;
       document.getElementById("updateModal").classList.remove("hidden");
     }
-    function closeUpdateModal() {
+
+    function closeModal() {
       document.getElementById("updateModal").classList.add("hidden");
     }
 
-    function upsertSingleUser() {
-      const user = document.getElementById("singleUser").value.trim();
-      if (!user) return alert("Please provide a username");
+    function upsertSingle() {
+      const username = document.getElementById("singleUser").value.trim();
+      if (!username) return alert("Please enter a username.");
       const cat = document.getElementById("modalCategory").value;
       const rank = parseInt(document.getElementById("singleRank").value) || null;
       const points = parseInt(document.getElementById("singlePoints").value) || 0;
       const badge = document.getElementById("singleBadge").value.trim().toUpperCase() || null;
 
-      upsertUser(cat, { username: user, rank, points, badge });
-      closeUpdateModal();
+      upsertUser(cat, { username, rank, points, badge });
+      document.getElementById("singleUser").value = "";
+      document.getElementById("singleRank").value = "";
+      document.getElementById("singlePoints").value = "";
+      document.getElementById("singleBadge").value = "";
+      closeModal();
       render();
     }
 
-    function parseAndUpsertRaw() {
-      const raw = document.getElementById("rawText").value;
+    function parseRawInput() {
+      const raw = document.getElementById("rawInput").value;
       const cat = document.getElementById("modalCategory").value;
       if (!raw.trim()) return;
 
-      // Extract users and badges
       const regex = /([a-zA-Z0-9_\.\-]+)\s*(?:\[0x[0-9A-Fa-f]+\])?\[([A-Z]+)\]/g;
       let match;
       let count = 0;
@@ -351,46 +370,33 @@
       while ((match = regex.exec(raw)) !== null) {
         const username = match[1];
         const badge = match[2];
-
-        // Search surrounding text for points
-        const rest = raw.substring(match.index, match.index + 200);
-        const ptMatch = rest.match(/(?:Points:?\s*|Points\n+)?(\d{2,7})/i);
-        const points = ptMatch ? parseInt(ptMatch[1]) : 0;
+        const snippet = raw.substring(match.index, match.index + 200);
+        const pt = snippet.match(/(?:Points:?\s*|Points\n+)?(\d{2,7})/i);
+        const points = pt ? parseInt(pt[1]) : 0;
 
         upsertUser(cat, { username, badge, points });
         count++;
       }
 
-      alert(`Processed and deduplicated ${count} entries in ${cat}!`);
-      document.getElementById("rawText").value = "";
-      closeUpdateModal();
+      alert(`Updated & deduplicated ${count} entries into ${cat}!`);
+      document.getElementById("rawInput").value = "";
+      closeModal();
       render();
     }
 
-    // Export Updated JSON
-    function exportJsonFile() {
+    function exportJson() {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataset, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", "users.json");
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
+      const a = document.createElement("a");
+      a.href = dataStr;
+      a.download = "users.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     }
 
-    function copyLink(url, btn) {
-      navigator.clipboard.writeText(url).then(() => {
-        const orig = btn.innerHTML;
-        btn.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i>`;
-        setTimeout(() => btn.innerHTML = orig, 1500);
-      });
-    }
+    document.getElementById("searchInput").addEventListener("input", (e) => render(e.target.value));
 
-    document.getElementById("searchInput").addEventListener("input", (e) => {
-      render(e.target.value);
-    });
-
-    init();
+    loadData();
   </script>
 </body>
 </html>
