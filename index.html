@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TryHackMe Journey & League Tracker</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            thm: {
+              bg: '#0a0d14',
+              surface: '#111726',
+              card: '#161f33',
+              cardHover: '#1d2943',
+              border: '#23314f',
+              borderLight: '#32456e',
+              green: '#10b981',
+              neon: '#2de28d',
+              red: '#ef4444',
+              cyan: '#38bdf8',
+              amber: '#f59e0b',
+              purple: '#a855f7'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom scrollbars & subtle glowing styling */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0d14; }
+    ::-webkit-scrollbar-thumb { background: #23314f; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2de28d; }
+    .neon-glow-green { box-shadow: 0 0 20px rgba(45, 226, 141, 0.15); }
+    .promotion-border { border-left: 3px solid #2de28d; }
+    .danger-border { border-left: 3px solid #64748b; }
+  </style>
+</head>
+
+<body class="bg-thm-bg text-slate-200 min-h-screen font-sans antialiased selection:bg-thm-neon selection:text-black">
+
+  <header class="border-b border-thm-border bg-thm-bg/95 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-thm-neon flex items-center justify-center text-thm-bg font-black text-xl shadow-lg shadow-emerald-950">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-lg tracking-tight text-white">THM <span class="text-thm-neon">Tracker</span></span>
+            <span id="dataOriginBadge" class="text-[10px] font-mono uppercase bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-thm-neon animate-pulse"></span>
+              <span id="dataOriginText">Syncing...</span>
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-mono hidden sm:block">GitHub Pages Friendly &bull; Auto-loads users.json</p>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex items-center space-x-1.5 sm:space-x-2">
+        <button id="guideBtn" title="How to update via GitHub" class="px-3 py-1.5 text-xs font-mono font-medium rounded-lg bg-thm-card hover:bg-thm-cardHover text-slate-300 border border-thm-border transition flex items-center gap-1.5">
+          <i class="fa-brands fa-github text-white"></i>
+          <span class="hidden md:inline">GitHub Guide</span>
+        </button>
+
+        <button id="exportJsonBtn" title="Export updated users.json file to commit to GitHub" class="px-3 py-1.5 text-xs font-mono font-medium rounded-lg bg-thm-card hover:bg-thm-cardHover text-thm-cyan border border-thm-border transition flex items-center gap-1.5">
+          <i class="fa-solid fa-file-arrow-down"></i>
+          <span class="hidden sm:inline">Export users.json</span>
+        </button>
+
+        <button id="quickPasteBtn" title="Batch paste multiple users or URLs" class="px-3 py-1.5 text-xs font-mono font-medium rounded-lg bg-thm-card hover:bg-thm-cardHover text-thm-amber border border-thm-border transition flex items-center gap-1.5">
+          <i class="fa-solid fa-paste"></i>
+          <span class="hidden sm:inline">Bulk Paste</span>
+        </button>
+
+        <button id="openAddModalBtn" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-thm-neon hover:bg-emerald-400 text-thm-bg transition flex items-center gap-1.5 shadow-md shadow-emerald-950 font-mono">
+          <i class="fa-solid fa-plus"></i>
+          <span>Add User</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- GitHub Pages sync notification banner -->
+    <div class="rounded-xl border border-thm-border bg-thm-surface p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs font-mono">
+      <div class="flex items-start gap-3">
+        <div class="p-2 rounded-lg bg-emerald-950/60 border border-emerald-800/80 text-thm-neon shrink-0">
+          <i class="fa-solid fa-code-commit text-sm"></i>
+        </div>
+        <div>
+          <span class="text-white font-semibold block text-sm">Two Simple Ways to Add More Users in the Future:</span>
+          <p class="text-slate-400 mt-0.5">
+            <span class="text-thm-neon font-bold">1. Quick web addition:</span> Click <b class="text-white">"Add User"</b> or <b class="text-white">"Bulk Paste"</b>, then click <b class="text-white">"Export users.json"</b> and drop it into your repository.
+            <br>
+            <span class="text-thm-cyan font-bold">2. Direct GitHub edit:</span> Edit <code class="text-thm-neon bg-slate-900 px-1 py-0.5 rounded">users.json</code> straight on GitHub.com in your browser anytime!
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="viewSampleJsonBtn" class="px-2.5 py-1 rounded border border-thm-border hover:border-slate-500 text-slate-300 bg-thm-bg transition">
+          View users.json Format
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick stats overview -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div class="bg-thm-surface border border-thm-border rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-mono text-slate-400 uppercase tracking-wider">Total Users</p>
+          <p id="totalUsersCount" class="text-2xl font-bold text-white mt-1">0</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-thm-cyan">
+          <i class="fa-solid fa-users"></i>
+        </div>
+      </div>
+
+      <div class="bg-thm-surface border border-thm-border rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-mono text-slate-400 uppercase tracking-wider">Promotion Safe (&le;20)</p>
+          <p id="promotionCount" class="text-2xl font-bold text-thm-neon mt-1">0</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-thm-neon">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+      </div>
+
+      <div class="bg-thm-surface border border-thm-border rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-mono text-slate-400 uppercase tracking-wider">Top Leader</p>
+          <p id="topLeaderName" class="text-sm font-bold text-white mt-1 truncate max-w-[130px] font-mono">-</p>
+          <p id="topLeaderPoints" class="text-xs text-thm-cyan font-mono">0 pts</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+          <i class="fa-solid fa-crown"></i>
+        </div>
+      </div>
+
+      <div class="bg-thm-surface border border-thm-border rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-mono text-slate-400 uppercase tracking-wider">Showing</p>
+          <p id="filteredCount" class="text-2xl font-bold text-white mt-1">0</p>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+          <i class="fa-solid fa-filter"></i>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-thm-surface border border-thm-border rounded-xl p-3 sm:p-4 space-y-3">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- Live search bar -->
+        <div class="relative flex-1">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search username, rank, badge (e.g. 1957552358, SEEKER, SudoZeroByteGourmet)..." 
+            class="w-full pl-9 pr-8 py-2 bg-thm-bg border border-thm-border rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-thm-neon transition font-mono"
+          >
+          <button id="clearSearchBtn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+            <i class="fa-solid fa-circle-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Filters & View Mode Toggles -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Zone Filter -->
+          <select id="zoneFilter" class="bg-thm-bg border border-thm-border text-slate-300 text-xs rounded-lg px-2.5 py-2 font-mono focus:outline-none focus:border-thm-neon">
+            <option value="all">All Profiles</option>
+            <option value="promotion">Promotion Zone (Rank 1-20)</option>
+            <option value="cutoff">Outside Cutoff (Rank 21+)</option>
+          </select>
+
+          <!-- Sorting -->
+          <select id="sortFilter" class="bg-thm-bg border border-thm-border text-slate-300 text-xs rounded-lg px-2.5 py-2 font-mono focus:outline-none focus:border-thm-neon">
+            <option value="rank_asc">Rank: 1 &rarr; 30</option>
+            <option value="points_desc">Points: Highest First</option>
+            <option value="points_asc">Points: Lowest First</option>
+            <option value="name_asc">Username: A &rarr; Z</option>
+          </select>
+
+          <!-- View Switcher -->
+          <div class="inline-flex rounded-lg border border-thm-border bg-thm-bg p-0.5">
+            <button id="gridViewBtn" class="p-1.5 rounded text-xs px-2.5 font-medium transition bg-thm-surface text-thm-neon" title="Grid view">
+              <i class="fa-solid fa-grip"></i>
+            </button>
+            <button id="tableViewBtn" class="p-1.5 rounded text-xs px-2.5 font-medium transition text-slate-400 hover:text-white" title="Table view">
+              <i class="fa-solid fa-table-list"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Badge Filter Pills -->
+      <div class="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
+        <span class="text-slate-500 font-mono text-[11px] mr-1">Ranks:</span>
+        <button class="rank-pill px-2.5 py-0.5 rounded-full font-mono bg-slate-800 text-slate-200 border border-slate-700 active-pill" data-badge="ALL">All</button>
+        <button class="rank-pill px-2.5 py-0.5 rounded-full font-mono bg-purple-950/40 text-purple-300 border border-purple-800/50" data-badge="LEGEND">LEGEND</button>
+        <button class="rank-pill px-2.5 py-0.5 rounded-full font-mono bg-cyan-950/40 text-cyan-300 border border-cyan-800/50" data-badge="HACKER">HACKER</button>
+        <button class="rank-pill px-2.5 py-0.5 rounded-full font-mono bg-blue-950/40 text-blue-300 border border-blue-800/50" data-badge="SEEKER">SEEKER</button>
+        <button class="rank-pill px-2.5 py-0.5 rounded-full font-mono bg-amber-950/40 text-amber-300 border border-amber-800/50" data-badge="PATHFINDER">PATHFINDER</button>
+        <button class="rank-pill px-2.5 py-0.5 rounded-full font-mono bg-emerald-950/40 text-emerald-300 border border-emerald-800/50" data-badge="NEOPHYTE">NEOPHYTE</button>
+      </div>
+    </section>
+
+    <section>
+      <!-- Grid Cards View -->
+      <div id="usersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered via JS -->
+      </div>
+
+      <!-- Table View -->
+      <div id="usersTableWrapper" class="hidden overflow-x-auto rounded-xl border border-thm-border bg-thm-surface">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="border-b border-thm-border bg-thm-bg/60 font-mono text-xs text-slate-400">
+              <th class="py-3 px-4 font-semibold">Rank</th>
+              <th class="py-3 px-4 font-semibold">Username / Direct URL</th>
+              <th class="py-3 px-4 font-semibold">Badge</th>
+              <th class="py-3 px-4 font-semibold">Points</th>
+              <th class="py-3 px-4 font-semibold">Promotion Status</th>
+              <th class="py-3 px-4 font-semibold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody" class="divide-y divide-thm-border font-mono text-xs">
+            <!-- Rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State Indicator -->
+      <div id="emptyState" class="hidden text-center py-16 px-4 bg-thm-surface rounded-xl border border-dashed border-thm-border">
+        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 mx-auto mb-3">
+          <i class="fa-solid fa-magnifying-glass text-lg"></i>
+        </div>
+        <h3 class="text-sm font-bold text-white">No Profiles Found</h3>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1">Try adjusting your search terms or clearing the current filters.</p>
+        <button id="resetFiltersBtn" class="mt-3 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-thm-neon border border-emerald-800/60 rounded-lg text-xs font-mono">
+          Reset All Filters
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <div id="userModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+    <div class="bg-thm-surface border border-thm-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-thm-border">
+        <h3 id="modalTitle" class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-user-shield text-thm-neon"></i>
+          <span>Add TryHackMe User</span>
+        </h3>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-white text-sm">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="userForm" class="mt-4 space-y-4 font-mono text-xs">
+        <input type="hidden" id="editUserId">
+
+        <div>
+          <label class="block text-slate-300 mb-1 font-sans text-xs font-semibold">TryHackMe Username <span class="text-thm-red">*</span></label>
+          <div class="relative">
+            <span class="absolute left-3 top-2.5 text-slate-500 font-mono">@</span>
+            <input 
+              type="text" 
+              id="formUsername" 
+              required 
+              placeholder="e.g. 1957552358 or SudoZeroByteGourmet" 
+              class="w-full bg-thm-bg border border-thm-border rounded-lg pl-8 pr-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-thm-neon"
+            >
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1 font-sans">
+            Preview Link: <a id="formPreviewLink" href="#" target="_blank" class="text-thm-cyan underline hover:text-white">https://tryhackme.com/p/<span id="previewUserSpan">username</span></a>
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1 font-sans text-xs font-semibold">Rank #</label>
+            <input 
+              type="number" 
+              id="formRank" 
+              min="1" 
+              value="31" 
+              class="w-full bg-thm-bg border border-thm-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-thm-neon"
+            >
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1 font-sans text-xs font-semibold">Points</label>
+            <input 
+              type="number" 
+              id="formPoints" 
+              min="0" 
+              value="100" 
+              class="w-full bg-thm-bg border border-thm-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-thm-neon"
+            >
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 mb-1 font-sans text-xs font-semibold">Badge / Level</label>
+            <select id="formBadge" class="w-full bg-thm-bg border border-thm-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-thm-neon">
+              <option value="[0x1][NEOPHYTE]">[0x1] NEOPHYTE</option>
+              <option value="[0x3][PATHFINDER]">[0x3] PATHFINDER</option>
+              <option value="[0x4][SEEKER]">[0x4] SEEKER</option>
+              <option value="[0x8][HACKER]">[0x8] HACKER</option>
+              <option value="[0xD][LEGEND]">[0xD] LEGEND</option>
+              <option value="[0x0][RECRUIT]">[0x0] RECRUIT</option>
+              <option value="CUSTOM">Custom Title...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1 font-sans text-xs font-semibold">League</label>
+            <input 
+              type="text" 
+              id="formLeague" 
+              value="Bronze League" 
+              class="w-full bg-thm-bg border border-thm-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-thm-neon"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 mb-1 font-sans text-xs font-semibold">Journey Note (Optional)</label>
+          <textarea 
+            id="formNotes" 
+            rows="2" 
+            placeholder="e.g. Companion from Cyber Security 101, solved room together..." 
+            class="w-full bg-thm-bg border border-thm-border rounded-lg px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-thm-neon"
+          ></textarea>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-thm-border font-sans">
+          <button type="button" id="cancelModalBtn" class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 rounded-lg bg-thm-neon text-thm-bg hover:bg-emerald-400 font-semibold text-xs transition">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="quickPasteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+    <div class="bg-thm-surface border border-thm-border rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-thm-border">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-paste text-thm-amber"></i>
+          <span>Bulk Add Users from Text or URLs</span>
+        </h3>
+        <button id="closePasteModalBtn" class="text-slate-400 hover:text-white text-sm">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-3 font-mono text-xs">
+        <p class="text-slate-400 font-sans">
+          Paste any list of usernames or TryHackMe profile links (one per line, or pasted directly from THM tables). We will extract the usernames automatically!
+        </p>
+        <textarea 
+          id="pasteInputArea" 
+          rows="7" 
+          placeholder="https://tryhackme.com/p/1957552358&#10;https://tryhackme.com/p/SudoZeroByteGourmet&#10;or just raw usernames:&#10;cayd3n.3&#10;joshtyj02" 
+          class="w-full bg-thm-bg border border-thm-border rounded-lg p-3 text-white placeholder-slate-600 focus:outline-none focus:border-thm-amber font-mono"
+        ></textarea>
+
+        <div class="flex items-center justify-between pt-2 border-t border-thm-border font-sans">
+          <span id="pasteCountNotice" class="text-[11px] text-slate-400 font-mono">0 usernames detected</span>
+          <div class="flex gap-2">
+            <button type="button" id="cancelPasteModalBtn" class="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-medium">Cancel</button>
+            <button type="button" id="confirmBatchAddBtn" class="px-4 py-1.5 rounded-lg bg-thm-amber text-black hover:bg-amber-400 font-semibold text-xs transition">Add All Users</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="guideModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+    <div class="bg-thm-surface border border-thm-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-thm-border">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-brands fa-github text-white"></i>
+          <span>How to Host & Update on GitHub Pages</span>
+        </h3>
+        <button id="closeGuideModalBtn" class="text-slate-400 hover:text-white text-sm">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4 font-mono text-xs text-slate-300 leading-relaxed">
+        <div class="bg-thm-bg p-3.5 rounded-xl border border-thm-border">
+          <p class="font-bold text-thm-neon font-sans text-sm mb-1"><i class="fa-solid fa-rocket mr-1"></i> Step 1: Initial Setup in 1 Minute</p>
+          <ol class="list-decimal list-inside space-y-1 text-slate-300 font-sans text-xs">
+            <li>Create a new public repository on GitHub (e.g. <code class="text-thm-cyan">thm-journey</code>).</li>
+            <li>Upload this file as <code class="text-thm-neon font-bold">index.html</code>.</li>
+            <li>Click the <b class="text-white font-mono">"Export users.json"</b> button in the top menu bar, and save it in the root of your repository as <code class="text-thm-neon font-bold">users.json</code>.</li>
+            <li>In GitHub: Go to <b>Settings &rarr; Pages &rarr; Branch: main &rarr; Save</b>. Your site is live!</li>
+          </ol>
+        </div>
+
+        <div class="bg-thm-bg p-3.5 rounded-xl border border-thm-border">
+          <p class="font-bold text-thm-cyan font-sans text-sm mb-1"><i class="fa-solid fa-pen mr-1"></i> Step 2: How to Add Users in the Future Without Touching Any Code</p>
+          <div class="space-y-2 font-sans text-xs">
+            <p><b class="text-white">Option A (Web-Only):</b> Add users anytime directly using the website UI. Then click <b class="text-thm-cyan font-mono">"Export users.json"</b> and commit/upload that single file to GitHub.</p>
+            <p><b class="text-white">Option B (Direct in GitHub):</b> Go to your repository on GitHub.com, click on <code class="text-thm-neon">users.json</code>, click the pencil icon (<i class="fa-solid fa-pen text-[10px]"></i>), paste new entries in the clean JSON format, and click <b>Commit Changes</b>!</p>
+          </div>
+        </div>
+
+        <div class="bg-thm-bg p-3.5 rounded-xl border border-thm-border">
+          <div class="flex items-center justify-between mb-1.5">
+            <p class="font-bold text-amber-400 font-sans text-xs">Sample users.json snippet:</p>
+            <button id="copySampleJsonBtn" class="text-[11px] text-thm-neon hover:underline font-mono">Copy Template</button>
+          </div>
+          <pre class="p-2.5 rounded bg-black/60 text-slate-300 text-[11px] overflow-x-auto border border-slate-800">[
+  {
+    "rank": 1,
+    "username": "SudoZeroByteGourmet",
+    "badge": "[0xD][LEGEND]",
+    "points": 1268,
+    "league": "Bronze League",
+    "notes": "3+ Day Streak"
+  },
+  {
+    "rank": 2,
+    "username": "1957552358",
+    "badge": "[0x4][SEEKER]",
+    "points": 1064,
+    "league": "Bronze League",
+    "notes": "Fast riser"
+  }
+]</pre>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-thm-border flex justify-end font-sans">
+        <button id="doneGuideModalBtn" class="px-4 py-1.5 bg-thm-neon text-thm-bg font-semibold rounded-lg text-xs">Got it!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Feedback -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 bg-thm-surface border border-thm-neon text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 transform translate-y-24 opacity-0 transition-all duration-300 font-mono text-xs">
+    <i class="fa-solid fa-circle-check text-thm-neon"></i>
+    <span id="toastMsg">Action completed successfully</span>
+  </div>
+
+  <script>
+    // Embedded 30 Bronze League users provided by user
+    const STARTER_PROFILES = [
+      { id: "1", rank: 1, username: "SudoZeroByteGourmet", badge: "[0xD][LEGEND]", points: 1268, league: "Bronze League", notes: "3+ Day Streak" },
+      { id: "2", rank: 2, username: "1957552358", badge: "[0x4][SEEKER]", points: 1064, league: "Bronze League", notes: "Target rival profile" },
+      { id: "3", rank: 3, username: "lacnka", badge: "[0x3][PATHFINDER]", points: 814, league: "Bronze League", notes: "" },
+      { id: "4", rank: 4, username: "cayd3n.3", badge: "[0x3][PATHFINDER]", points: 752, league: "Bronze League", notes: "" },
+      { id: "5", rank: 5, username: "joshtyj02", badge: "[0x8][HACKER]", points: 192, league: "Bronze League", notes: "" },
+      { id: "6", rank: 6, username: "sherlok.", badge: "[0x1][NEOPHYTE]", points: 192, league: "Bronze League", notes: "" },
+      { id: "7", rank: 7, username: "igmallsumantri", badge: "[0x1][NEOPHYTE]", points: 170, league: "Bronze League", notes: "" },
+      { id: "8", rank: 8, username: "AnandhaSri.M", badge: "[0x1][NEOPHYTE]", points: 160, league: "Bronze League", notes: "" },
+      { id: "9", rank: 9, username: "mohanadabualreesh", badge: "[0x4][SEEKER]", points: 156, league: "Bronze League", notes: "" },
+      { id: "10", rank: 10, username: "azizbekaxmatillayev7", badge: "[0x1][NEOPHYTE]", points: 152, league: "Bronze League", notes: "" },
+      { id: "11", rank: 11, username: "swam.cushier0n", badge: "[0x1][NEOPHYTE]", points: 152, league: "Bronze League", notes: "" },
+      { id: "12", rank: 12, username: "ujwala.kokala", badge: "[0x3][PATHFINDER]", points: 136, league: "Bronze League", notes: "" },
+      { id: "13", rank: 13, username: "spider8579", badge: "[0x1][NEOPHYTE]", points: 136, league: "Bronze League", notes: "" },
+      { id: "14", rank: 14, username: "rizkimuhamadadamm", badge: "[0x1][NEOPHYTE]", points: 128, league: "Bronze League", notes: "" },
+      { id: "15", rank: 15, username: "saravanansaro22333", badge: "[0x1][NEOPHYTE]", points: 128, league: "Bronze League", notes: "" },
+      { id: "16", rank: 16, username: "hanh13", badge: "[0x8][HACKER]", points: 120, league: "Bronze League", notes: "" },
+      { id: "17", rank: 17, username: "kabanets.maks", badge: "[0x1][NEOPHYTE]", points: 120, league: "Bronze League", notes: "" },
+      { id: "18", rank: 18, username: "ahsanrazabhutta413", badge: "[0x1][NEOPHYTE]", points: 118, league: "Bronze League", notes: "" },
+      { id: "19", rank: 19, username: "arkabdullah57", badge: "[0x1][NEOPHYTE]", points: 112, league: "Bronze League", notes: "" },
+      { id: "20", rank: 20, username: "itszain5665", badge: "[0x1][NEOPHYTE]", points: 112, league: "Bronze League", notes: "Cutoff boundary" },
+      { id: "21", rank: 21, username: "ghostwolf.nobody", badge: "[0x1][NEOPHYTE]", points: 112, league: "Bronze League", notes: "" },
+      { id: "22", rank: 22, username: "pattarasit.4833", badge: "[0x1][NEOPHYTE]", points: 112, league: "Bronze League", notes: "" },
+      { id: "23", rank: 23, username: "giorgigamer19861985", badge: "[0x1][NEOPHYTE]", points: 112, league: "Bronze League", notes: "" },
+      { id: "24", rank: 24, username: "chranjithpvt", badge: "[0x1][NEOPHYTE]", points: 112, league: "Bronze League", notes: "" },
+      { id: "25", rank: 25, username: "xiyazeedix", badge: "[0x1][NEOPHYTE]", points: 96, league: "Bronze League", notes: "" },
+      { id: "26", rank: 26, username: "25060474298", badge: "[0x1][NEOPHYTE]", points: 88, league: "Bronze League", notes: "" },
+      { id: "27", rank: 27, username: "ChandreshP", badge: "[0x1][NEOPHYTE]", points: 72, league: "Bronze League", notes: "" },
+      { id: "28", rank: 28, username: "k.alishtok", badge: "[0x1][NEOPHYTE]", points: 72, league: "Bronze League", notes: "" },
+      { id: "29", rank: 29, username: "b777", badge: "[0x1][NEOPHYTE]", points: 72, league: "Bronze League", notes: "" },
+      { id: "30", rank: 30, username: "thaituan150806", badge: "[0x1][NEOPHYTE]", points: 72, league: "Bronze League", notes: "" }
+    ];
+
+    const STORAGE_KEY = "thm_tracker_users_v2";
+    let userList = [];
+    let currentView = "grid";
+    let activeBadgePill = "ALL";
+
+    async function initializeUserData() {
+      const originBadge = document.getElementById("dataOriginText");
+      
+      // Step 1: Check if external users.json is present (for GitHub Pages hosting)
+      try {
+        const response = await fetch('./users.json', { cache: 'no-store' });
+        if (response.ok) {
+          const externalData = await response.json();
+          if (Array.isArray(externalData) && externalData.length > 0) {
+            userList = externalData.map((item, index) => ({
+              id: item.id || `${Date.now()}_${index}`,
+              rank: Number(item.rank) || (index + 1),
+              username: String(item.username).trim(),
+              badge: item.badge || "[0x1][NEOPHYTE]",
+              points: Number(item.points) || 0,
+              league: item.league || "Bronze League",
+              notes: item.notes || ""
+            }));
+            originBadge.textContent = "Live users.json";
+            renderApp();
+            return;
+          }
+        }
+      } catch (err) {
+        console.log("users.json not found on current host, falling back to localStorage/defaults.");
+      }
+
+      // Step 2: Fallback to LocalStorage
+      const localData = localStorage.getItem(STORAGE_KEY);
+      if (localData) {
+        try {
+          userList = JSON.parse(localData);
+          originBadge.textContent = "Local Storage Cache";
+          renderApp();
+          return;
+        } catch (e) {
+          console.error("Local storage parse error:", e);
+        }
+      }
+
+      // Step 3: Default initial Starter Profiles
+      userList = [...STARTER_PROFILES];
+      originBadge.textContent = "Default 30 Users";
+      saveLocalData();
+      renderApp();
+    }
+
+    function saveLocalData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(userList));
+      } catch (e) {
+        console.warn("Storage write failed", e);
+      }
+      updateStats();
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      const msg = document.getElementById("toastMsg");
+      msg.textContent = message;
+      toast.classList.remove("translate-y-24", "opacity-0");
+      toast.classList.add("translate-y-0", "opacity-100");
+      setTimeout(() => {
+        toast.classList.add("translate-y-24", "opacity-0");
+        toast.classList.remove("translate-y-0", "opacity-100");
+      }, 2500);
+    }
+
+    function copyToClipboard(text, successMsg = "Copied to clipboard!") {
+      const el = document.createElement("textarea");
+      el.value = text;
+      el.setAttribute("readonly", "");
+      el.style.position = "absolute";
+      el.style.left = "-9999px";
+      document.body.appendChild(el);
+      el.select();
+      try {
+        document.execCommand("copy");
+        showToast(successMsg);
+      } catch (e) {
+        console.error("Copy error", e);
+      }
+      document.body.removeChild(el);
+    }
+
+    function getBadgeClass(badge) {
+      if (badge.includes("LEGEND")) return "text-purple-400 bg-purple-950/60 border-purple-800/80";
+      if (badge.includes("HACKER")) return "text-cyan-400 bg-cyan-950/60 border-cyan-800/80";
+      if (badge.includes("SEEKER")) return "text-blue-400 bg-blue-950/60 border-blue-800/80";
+      if (badge.includes("PATHFINDER")) return "text-amber-400 bg-amber-950/60 border-amber-800/80";
+      return "text-emerald-400 bg-emerald-950/60 border-emerald-800/80";
+    }
+
+    function updateStats() {
+      document.getElementById("totalUsersCount").textContent = userList.length;
+      
+      const safeCount = userList.filter(u => Number(u.rank) <= 20).length;
+      document.getElementById("promotionCount").textContent = safeCount;
+
+      if (userList.length > 0) {
+        const leader = [...userList].sort((a, b) => b.points - a.points)[0];
+        document.getElementById("topLeaderName").textContent = leader.username;
+        document.getElementById("topLeaderPoints").textContent = `${Number(leader.points).toLocaleString()} pts`;
+      } else {
+        document.getElementById("topLeaderName").textContent = "-";
+        document.getElementById("topLeaderPoints").textContent = "0 pts";
+      }
+    }
+
+    function getFilteredUsers() {
+      const search = document.getElementById("searchInput").value.trim().toLowerCase();
+      const zone = document.getElementById("zoneFilter").value;
+      const sort = document.getElementById("sortFilter").value;
+
+      let result = [...userList];
+
+      if (search) {
+        result = result.filter(u => 
+          u.username.toLowerCase().includes(search) ||
+          u.badge.toLowerCase().includes(search) ||
+          u.rank.toString() === search ||
+          (u.notes && u.notes.toLowerCase().includes(search))
+        );
+      }
+
+      if (zone === "promotion") {
+        result = result.filter(u => Number(u.rank) <= 20);
+      } else if (zone === "cutoff") {
+        result = result.filter(u => Number(u.rank) > 20);
+      }
+
+      if (activeBadgePill !== "ALL") {
+        result = result.filter(u => u.badge.toUpperCase().includes(activeBadgePill));
+      }
+
+      if (sort === "rank_asc") {
+        result.sort((a, b) => Number(a.rank) - Number(b.rank));
+      } else if (sort === "points_desc") {
+        result.sort((a, b) => Number(b.points) - Number(a.points));
+      } else if (sort === "points_asc") {
+        result.sort((a, b) => Number(a.points) - Number(b.points));
+      } else if (sort === "name_asc") {
+        result.sort((a, b) => a.username.localeCompare(b.username));
+      }
+
+      return result;
+    }
+
+    function renderApp() {
+      updateStats();
+      const filtered = getFilteredUsers();
+      const grid = document.getElementById("usersGrid");
+      const tableBody = document.getElementById("usersTableBody");
+      const emptyState = document.getElementById("emptyState");
+      const filteredCount = document.getElementById("filteredCount");
+
+      filteredCount.textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = "";
+        tableBody.innerHTML = "";
+        emptyState.classList.remove("hidden");
+        return;
+      }
+      emptyState.classList.add("hidden");
+
+      // Grid Card Representation
+      grid.innerHTML = filtered.map(u => {
+        const isPromotion = Number(u.rank) <= 20;
+        const profileUrl = `https://tryhackme.com/p/${encodeURIComponent(u.username)}`;
+        const badgeClass = getBadgeClass(u.badge);
+
+        return `
+          <div class="group bg-thm-surface border ${isPromotion ? 'border-emerald-800/70 promotion-border' : 'border-thm-border danger-border'} hover:border-thm-neon/60 rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5 shadow-lg relative flex flex-col justify-between">
+            <div>
+              <!-- Top Row: Rank & Badge -->
+              <div class="flex items-center justify-between gap-2 mb-2.5">
+                <div class="flex items-center gap-1.5">
+                  <span class="px-2 py-0.5 rounded bg-thm-bg border border-thm-border text-xs font-mono font-bold ${isPromotion ? 'text-thm-neon' : 'text-slate-400'}">
+                    #${u.rank}
+                  </span>
+                  <span class="text-[11px] font-mono px-2 py-0.5 rounded border ${badgeClass}">
+                    ${u.badge}
+                  </span>
+                </div>
+
+                <div class="flex items-center space-x-1 opacity-70 group-hover:opacity-100 transition">
+                  <button onclick="openEditModal('${u.id}')" title="Edit entry" class="p-1 hover:text-thm-cyan text-slate-400 text-xs">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button onclick="deleteUser('${u.id}')" title="Remove" class="p-1 hover:text-thm-red text-slate-400 text-xs">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Main Direct Link to THM Profile -->
+              <div class="mb-2">
+                <a 
+                  href="${profileUrl}" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  title="Open @${u.username}'s TryHackMe profile"
+                  class="font-mono font-bold text-base text-white hover:text-thm-neon transition inline-flex items-center gap-1.5 break-all"
+                >
+                  <span>${u.username}</span>
+                  <i class="fa-solid fa-arrow-up-right-from-square text-xs text-thm-neon opacity-80"></i>
+                </a>
+                <span class="block text-[11px] text-slate-500 font-mono truncate mt-0.5">${profileUrl}</span>
+              </div>
+
+              ${u.notes ? `
+                <p class="text-[11px] text-slate-300 bg-thm-bg/80 border border-thm-border/80 px-2.5 py-1.5 rounded-lg mb-3 italic line-clamp-2">
+                  "${u.notes}"
+                </p>
+              ` : ''}
+            </div>
+
+            <!-- Bottom Row: Points & Visit Buttons -->
+            <div class="pt-3 border-t border-thm-border/70 flex items-center justify-between mt-2">
+              <div>
+                <span class="text-[10px] font-mono uppercase text-slate-400 block">Points</span>
+                <span class="text-sm font-bold font-mono text-thm-cyan">${Number(u.points).toLocaleString()}</span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button 
+                  onclick="copyToClipboard('${profileUrl}', 'Copied: ${profileUrl}')" 
+                  title="Copy Profile URL" 
+                  class="p-1.5 rounded-md bg-thm-bg hover:bg-slate-800 text-slate-400 hover:text-white border border-thm-border text-xs transition font-mono"
+                >
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+                <a 
+                  href="${profileUrl}" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  class="px-3 py-1.5 rounded-md bg-emerald-950/70 hover:bg-thm-neon text-thm-neon hover:text-thm-bg border border-emerald-800/80 text-xs font-mono font-semibold transition inline-flex items-center gap-1"
+                >
+                  Profile <i class="fa-solid fa-angle-right text-[10px]"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Table Representation
+      tableBody.innerHTML = filtered.map(u => {
+        const isPromotion = Number(u.rank) <= 20;
+        const profileUrl = `https://tryhackme.com/p/${encodeURIComponent(u.username)}`;
+        const badgeClass = getBadgeClass(u.badge);
+
+        return `
+          <tr class="hover:bg-thm-cardHover/50 transition">
+            <td class="py-3 px-4 font-bold ${isPromotion ? 'text-thm-neon' : 'text-slate-400'}">
+              #${u.rank}
+            </td>
+            <td class="py-3 px-4">
+              <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="font-bold text-white hover:text-thm-neon transition inline-flex items-center gap-1.5">
+                <span>${u.username}</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-thm-neon"></i>
+              </a>
+              <span class="block text-[10px] text-slate-500 font-normal">${profileUrl}</span>
+            </td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded border text-[11px] ${badgeClass}">
+                ${u.badge}
+              </span>
+            </td>
+            <td class="py-3 px-4 font-bold text-thm-cyan">
+              ${Number(u.points).toLocaleString()}
+            </td>
+            <td class="py-3 px-4">
+              ${isPromotion ? `
+                <span class="text-thm-neon text-[11px] font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-check text-[10px]"></i> Promotion Zone
+                </span>
+              ` : `
+                <span class="text-slate-500 text-[11px]">Cutoff</span>
+              `}
+            </td>
+            <td class="py-3 px-4 text-right space-x-1 font-mono">
+              <button onclick="copyToClipboard('${profileUrl}')" class="p-1.5 text-slate-400 hover:text-white" title="Copy URL">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+              <button onclick="openEditModal('${u.id}')" class="p-1.5 text-slate-400 hover:text-thm-cyan" title="Edit">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button onclick="deleteUser('${u.id}')" class="p-1.5 text-slate-400 hover:text-thm-red" title="Delete">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openAddModal() {
+      document.getElementById("modalTitle").innerHTML = '<i class="fa-solid fa-user-shield text-thm-neon"></i><span>Add TryHackMe User</span>';
+      document.getElementById("editUserId").value = "";
+      document.getElementById("formUsername").value = "";
+      document.getElementById("formRank").value = userList.length + 1;
+      document.getElementById("formPoints").value = "100";
+      document.getElementById("formBadge").value = "[0x1][NEOPHYTE]";
+      document.getElementById("formLeague").value = "Bronze League";
+      document.getElementById("formNotes").value = "";
+      updatePreviewLink("username");
+      document.getElementById("userModal").classList.remove("hidden");
+    }
+
+    function openEditModal(id) {
+      const user = userList.find(u => u.id === id);
+      if (!user) return;
+
+      document.getElementById("modalTitle").innerHTML = '<i class="fa-solid fa-pen-to-square text-thm-cyan"></i><span>Edit Profile Entry</span>';
+      document.getElementById("editUserId").value = user.id;
+      document.getElementById("formUsername").value = user.username;
+      document.getElementById("formRank").value = user.rank;
+      document.getElementById("formPoints").value = user.points;
+
+      const badgeSelect = document.getElementById("formBadge");
+      let found = false;
+      for (let i = 0; i < badgeSelect.options.length; i++) {
+        if (badgeSelect.options[i].value === user.badge) {
+          badgeSelect.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+      if (!found) badgeSelect.value = "CUSTOM";
+
+      document.getElementById("formLeague").value = user.league || "Bronze League";
+      document.getElementById("formNotes").value = user.notes || "";
+      updatePreviewLink(user.username);
+      document.getElementById("userModal").classList.remove("hidden");
+    }
+
+    function updatePreviewLink(username) {
+      const clean = (username || "username").trim();
+      document.getElementById("previewUserSpan").textContent = clean;
+      document.getElementById("formPreviewLink").href = `https://tryhackme.com/p/${encodeURIComponent(clean)}`;
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById("editUserId").value;
+      const username = document.getElementById("formUsername").value.trim().replace(/^@/, '');
+      const rank = parseInt(document.getElementById("formRank").value, 10) || (userList.length + 1);
+      const points = parseInt(document.getElementById("formPoints").value, 10) || 0;
+      let badge = document.getElementById("formBadge").value;
+      if (badge === "CUSTOM") {
+        badge = prompt("Enter Custom Badge Label (e.g. [0x9][MASTER]):", "[0x1][NEOPHYTE]") || "[0x1][NEOPHYTE]";
+      }
+      const league = document.getElementById("formLeague").value.trim() || "Bronze League";
+      const notes = document.getElementById("formNotes").value.trim();
+
+      if (!username) return;
+
+      if (id) {
+        const idx = userList.findIndex(u => u.id === id);
+        if (idx !== -1) {
+          userList[idx] = { ...userList[idx], username, rank, points, badge, league, notes };
+          showToast(`Updated @${username}`);
+        }
+      } else {
+        const newEntry = {
+          id: `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          username,
+          rank,
+          points,
+          badge,
+          league,
+          notes
+        };
+        userList.push(newEntry);
+        showToast(`Added @${username}! Remember to export users.json for GitHub.`);
+      }
+
+      saveLocalData();
+      document.getElementById("userModal").classList.add("hidden");
+      renderApp();
+    }
+
+    function deleteUser(id) {
+      const target = userList.find(u => u.id === id);
+      if (!target) return;
+      userList = userList.filter(u => u.id !== id);
+      saveLocalData();
+      renderApp();
+      showToast(`Removed @${target.username}`);
+    }
+
+    // Bulk parse usernames or TryHackMe profile links from text
+    function parsePasteInput(text) {
+      const lines = text.split(/[\r\n\t,;]+/);
+      const usernames = [];
+      const urlPattern = /(?:https?:\/\/)?(?:www\.)?tryhackme\.com\/p\/([a-zA-Z0-9_\.\-]+)/i;
+
+      for (let raw of lines) {
+        const line = raw.trim();
+        if (!line) continue;
+
+        const match = line.match(urlPattern);
+        if (match && match[1]) {
+          usernames.push(match[1]);
+        } else {
+          // Check if clean username
+          const cleanUser = line.replace(/^[0-9]+\s+/, '') // remove leading rank numbers if any
+                                .replace(/\[0x[0-9A-Fa-f]+\]\[[A-Z]+\]/, '') // remove badge strings
+                                .replace(/@/, '')
+                                .trim();
+          if (cleanUser && !cleanUser.includes("http") && !cleanUser.includes(" ") && cleanUser.length <= 40) {
+            usernames.push(cleanUser);
+          }
+        }
+      }
+      return [...new Set(usernames)]; // deduplicate
+    }
+
+    function handleBatchAdd() {
+      const text = document.getElementById("pasteInputArea").value;
+      const detected = parsePasteInput(text);
+
+      if (detected.length === 0) {
+        showToast("No valid usernames or profile URLs recognized.");
+        return;
+      }
+
+      let addedCount = 0;
+      let startRank = userList.length + 1;
+
+      detected.forEach((username) => {
+        // Avoid duplicate usernames
+        const exists = userList.some(u => u.username.toLowerCase() === username.toLowerCase());
+        if (!exists) {
+          userList.push({
+            id: `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            username,
+            rank: startRank++,
+            points: 100,
+            badge: "[0x1][NEOPHYTE]",
+            league: "Bronze League",
+            notes: "Imported from batch list"
+          });
+          addedCount++;
+        }
+      });
+
+      saveLocalData();
+      renderApp();
+      document.getElementById("quickPasteModal").classList.add("hidden");
+      document.getElementById("pasteInputArea").value = "";
+      showToast(`Added ${addedCount} new users! Click 'Export users.json' to update GitHub.`);
+    }
+
+    function exportCleanJson() {
+      // Export a clean, readable JSON format ready to drop into GitHub repository
+      const cleanArray = userList.map(u => ({
+        rank: Number(u.rank),
+        username: u.username,
+        badge: u.badge,
+        points: Number(u.points),
+        league: u.league || "Bronze League",
+        notes: u.notes || ""
+      }));
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cleanArray, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "users.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("Downloaded 'users.json'! Upload it directly to your GitHub repository.");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initializeUserData();
+
+      // Form real-time preview
+      document.getElementById("formUsername").addEventListener("input", (e) => {
+        updatePreviewLink(e.target.value);
+      });
+
+      // Search and Filters
+      document.getElementById("searchInput").addEventListener("input", (e) => {
+        const val = e.target.value.trim();
+        document.getElementById("clearSearchBtn").classList.toggle("hidden", val.length === 0);
+        renderApp();
+      });
+
+      document.getElementById("clearSearchBtn").addEventListener("click", () => {
+        const input = document.getElementById("searchInput");
+        input.value = "";
+        document.getElementById("clearSearchBtn").classList.add("hidden");
+        renderApp();
+      });
+
+      document.getElementById("resetFiltersBtn").addEventListener("click", () => {
+        document.getElementById("searchInput").value = "";
+        document.getElementById("zoneFilter").value = "all";
+        document.getElementById("sortFilter").value = "rank_asc";
+        activeBadgePill = "ALL";
+        document.querySelectorAll(".rank-pill").forEach(p => p.classList.remove("ring-2", "ring-thm-neon"));
+        renderApp();
+      });
+
+      document.getElementById("zoneFilter").addEventListener("change", renderApp);
+      document.getElementById("sortFilter").addEventListener("change", renderApp);
+
+      // Badge Filter Pills
+      document.querySelectorAll(".rank-pill").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".rank-pill").forEach(b => b.classList.remove("ring-2", "ring-thm-neon"));
+          btn.classList.add("ring-2", "ring-thm-neon");
+          activeBadgePill = btn.getAttribute("data-badge");
+          renderApp();
+        });
+      });
+
+      // View Toggle
+      const gridBtn = document.getElementById("gridViewBtn");
+      const tableBtn = document.getElementById("tableViewBtn");
+      const gridBox = document.getElementById("usersGrid");
+      const tableBox = document.getElementById("usersTableWrapper");
+
+      gridBtn.addEventListener("click", () => {
+        gridBtn.classList.add("bg-thm-surface", "text-thm-neon");
+        gridBtn.classList.remove("text-slate-400");
+        tableBtn.classList.remove("bg-thm-surface", "text-thm-neon");
+        tableBtn.classList.add("text-slate-400");
+        gridBox.classList.remove("hidden");
+        tableBox.classList.add("hidden");
+      });
+
+      tableBtn.addEventListener("click", () => {
+        tableBtn.classList.add("bg-thm-surface", "text-thm-neon");
+        tableBtn.classList.remove("text-slate-400");
+        gridBtn.classList.remove("bg-thm-surface", "text-thm-neon");
+        gridBtn.classList.add("text-slate-400");
+        tableBox.classList.remove("hidden");
+        gridBox.classList.add("hidden");
+      });
+
+      // Modal Triggers
+      document.getElementById("openAddModalBtn").addEventListener("click", openAddModal);
+      document.getElementById("closeModalBtn").addEventListener("click", () => document.getElementById("userModal").classList.add("hidden"));
+      document.getElementById("cancelModalBtn").addEventListener("click", () => document.getElementById("userModal").classList.add("hidden"));
+      document.getElementById("userForm").addEventListener("submit", handleFormSubmit);
+
+      // Bulk paste
+      const pasteModal = document.getElementById("quickPasteModal");
+      document.getElementById("quickPasteBtn").addEventListener("click", () => {
+        pasteModal.classList.remove("hidden");
+      });
+      document.getElementById("closePasteModalBtn").addEventListener("click", () => pasteModal.classList.add("hidden"));
+      document.getElementById("cancelPasteModalBtn").addEventListener("click", () => pasteModal.classList.add("hidden"));
+      
+      document.getElementById("pasteInputArea").addEventListener("input", (e) => {
+        const found = parsePasteInput(e.target.value);
+        document.getElementById("pasteCountNotice").textContent = `${found.length} usernames detected`;
+      });
+      document.getElementById("confirmBatchAddBtn").addEventListener("click", handleBatchAdd);
+
+      // Guide Modal
+      const guideModal = document.getElementById("guideModal");
+      document.getElementById("guideBtn").addEventListener("click", () => guideModal.classList.remove("hidden"));
+      document.getElementById("viewSampleJsonBtn").addEventListener("click", () => guideModal.classList.remove("hidden"));
+      document.getElementById("closeGuideModalBtn").addEventListener("click", () => guideModal.classList.add("hidden"));
+      document.getElementById("doneGuideModalBtn").addEventListener("click", () => guideModal.classList.add("hidden"));
+
+      // Export JSON
+      document.getElementById("exportJsonBtn").addEventListener("click", exportCleanJson);
+
+      // Copy template snippet in modal
+      document.getElementById("copySampleJsonBtn").addEventListener("click", () => {
+        const sample = `[\n  {\n    "rank": 1,\n    "username": "SudoZeroByteGourmet",\n    "badge": "[0xD][LEGEND]",\n    "points": 1268,\n    "league": "Bronze League",\n    "notes": "3+ Day Streak"\n  }\n]`;
+        copyToClipboard(sample, "Sample JSON copied!");
+      });
+    });
+  </script>
+</body>
+</html>
